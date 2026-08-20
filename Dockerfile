@@ -25,13 +25,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # --- CRF++（CaboCha の依存）---
+# taku910/crfpp の Git リポジトリは crf_learn.cpp が要求する winmain.h を欠く
+# （公式 tarball にはあるが Git ミラーには無い）。学習用バイナリ crf_learn/crf_test は
+# それでビルド不可だが、CaboCha の「実行」に必要なのは共有ライブラリ libcrfpp と
+# crfpp.h だけ。よってライブラリターゲットのみをビルド・インストールする。
 # TODO: 再現性のためコミットハッシュ/タグを固定する
 RUN git clone --depth 1 https://github.com/taku910/crfpp.git /tmp/crfpp \
     && cd /tmp/crfpp \
-    && ( test -f configure || ( autoreconf -i || true ) ) \
     && ./configure --prefix=/usr/local \
-    && make -j"$(nproc)" \
-    && make install \
+    && make -j"$(nproc)" libcrfpp.la \
+    && mkdir -p /usr/local/lib /usr/local/include \
+    && ./libtool --mode=install install -c libcrfpp.la /usr/local/lib/ \
+    && install -m 0644 crfpp.h /usr/local/include/ \
     && ldconfig
 
 # --- CaboCha 本体（UTF-8 / IPA 品詞体系でビルド）---
@@ -44,6 +49,8 @@ RUN git clone --depth 1 https://github.com/taku910/cabocha.git /tmp/cabocha \
         --with-charset=UTF8 \
         --with-posset=IPA \
         --enable-utf8-only \
+        CPPFLAGS="-I/usr/local/include" \
+        LDFLAGS="-L/usr/local/lib" \
     && make -j"$(nproc)" \
     && make install \
     && ldconfig
