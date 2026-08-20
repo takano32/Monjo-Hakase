@@ -73,6 +73,18 @@ jobs:
           if ! echo "$body" | grep -q '校正結果'; then
             echo "ERROR: '校正結果' section not found — pipeline did not complete"; docker logs monjo; exit 1
           fi
+
+          # 回帰チェック: プロキシ TLS 終端環境（X-Forwarded-Proto: https）で
+          # フォーム action が https:// になること（CGI.pm が http:// を出す問題の再発防止）
+          form=$(curl -s -H 'X-Forwarded-Proto: https' http://localhost:8080/njc.cgi \
+            | grep -oE '<form[^>]*action="[^"]*"' | head -1)
+          echo "form(action) under XFP=https: $form"
+          if echo "$form" | grep -qE 'action="http://'; then
+            echo "ERROR: form action is http:// even with X-Forwarded-Proto=https"; docker logs monjo; exit 1
+          fi
+          if ! echo "$form" | grep -qE 'action="https://'; then
+            echo "ERROR: form action is not https://"; docker logs monjo; exit 1
+          fi
           echo "SMOKE TEST PASSED"
 
       - name: Stop container

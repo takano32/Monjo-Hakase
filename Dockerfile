@@ -97,7 +97,7 @@ RUN cp /var/www/html/jcorrect-hs /var/www/jcorrect-hs \
 COPY docker/apache-monjo.conf.template /etc/apache2/apache-monjo.conf.template
 COPY docker/ports.conf.template /etc/apache2/ports.conf.template
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN a2enmod cgid \
+RUN a2enmod cgid setenvif \
     && chmod +x /usr/local/bin/entrypoint.sh \
     # Apache をフォアグラウンド前提に。ログは stdout/stderr へ
     && ln -sf /dev/stdout /var/log/apache2/access.log \

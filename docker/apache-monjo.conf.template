@@ -4,6 +4,12 @@
     ServerName monjo-hakase
     DocumentRoot /var/www/html
 
+    # Cloud Run 等リバースプロキシが TLS 終端する構成では、コンテナへの転送は HTTP。
+    # そのままだと CGI.pm の ->url が http:// を生成し、フォームの action が HTTP になる。
+    # プロキシが付ける X-Forwarded-Proto: https を見て HTTPS=on を立て、
+    # CGI 側に「元は HTTPS」であることを伝える（Perl ソースは無改変）。
+    SetEnvIf X-Forwarded-Proto "^https$" HTTPS=on
+
     <Directory /var/www/html>
         Options +ExecCGI +FollowSymLinks
         AddHandler cgi-script .cgi
