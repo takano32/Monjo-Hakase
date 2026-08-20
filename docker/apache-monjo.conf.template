@@ -1,0 +1,20 @@
+# 文章博士 Cloud Run 用 vhost。njc.cgi を CGI として実行する。
+# Listen ポートは ports.conf（entrypoint が $PORT から生成）で設定。
+<VirtualHost *:${PORT}>
+    ServerName monjo-hakase
+    DocumentRoot /var/www/html
+
+    <Directory /var/www/html>
+        Options +ExecCGI +FollowSymLinks
+        AddHandler cgi-script .cgi
+        DirectoryIndex index.html index.htm njc.cgi
+        AllowOverride None
+        Require all granted
+    </Directory>
+
+    # /var/www/jcorrect-hs（DocumentRoot 外）は Web 公開しない。
+    # njc.cgi からファイルパスとして参照されるだけ。
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>

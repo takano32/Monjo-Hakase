@@ -23,13 +23,48 @@
 - **テスト可能な構成。** 校正ロジックを CGI 出力から分離し、入力→エラー配列 の純粋関数として単体テストできるようにする。
 - **再現可能な実行環境。** 解析エンジンの依存（辞書・バージョン）をコンテナ等で固定する。
 
-## アーキテクチャ候補（未決）
+## アーキテクチャ（本命: コンテナ化 + Cloud Run）
 
-以下は選択肢のたたき台。決めたらここを更新する。
+**採用方針:** 現行の Perl CGI + jcorrect + CaboCha + MeCab + nkf スタックを Docker イメージに
+そのまま固め、**Google Cloud Run** にデプロイする。理由:
 
-1. **最小改修案** — 既存 Perl をベースに、インジェクション修正・TLS・トラッキング除去だけ行う。移行コスト最小、負債は残る。
-2. **API + フロント分離案** — 校正ロジックを HTTP API（例: Python/Go/Node）として切り出し、フロントを別途用意。
-3. **コンテナ化案** — 解析エンジン込みで Docker 化し、どこでも同一に動く校正サービスとして再配布。
+- ネイティブ依存（CaboCha/MeCab の実行ファイル＋辞書）をイメージに封じ込めれば、Cloud Run で無改造に近い形で動く。
+- 校正ツールは低頻度・バースト的トラフィック。**scale-to-zero でアイドル課金ゼロ**、リクエスト単位課金が合う。
+- TLS は Cloud Run が終端するため、旧環境の「HTTP 平文のみ」問題が自動的に解消する。
+
+### 実装状況（このリポジトリ）
+
+| ファイル | 役割 |
+|----------|------|
+| `Dockerfile` | 2段ビルド。builder で CRF++/CaboCha をソースビルド、実行段に Apache+Perl CGI+MeCab+nkf を同梱 |
+| `docker/apache-monjo.conf.template` | njc.cgi を CGI 実行する vhost（`$PORT` 待受） |
+| `docker/ports.conf.template` | Apache の Listen ディレクティブ（`$PORT`） |
+| `docker/entrypoint.sh` | `$PORT` を差し込んで Apache をフォアグラウンド起動（Cloud Run 要件） |
+| `legacy/monjo-hakase/` | 旧ソース一式（COPY 元） |
+
+### Cloud Run 前提の設計ポイント
+
+- コンテナは `0.0.0.0:$PORT`（既定 8080）で HTTP 待受 → entrypoint が Apache をその PORT で起動。
+- `/tmp` は書き込み可（njc.cgi の一時ファイル `/tmp/jcorrect$$` が動く）。
+- NLP は CPU バウンド → コンテナ同時実行数(concurrency)は低め設定推奨。辞書ロードのコールドスタートが気になれば `min-instances=1`。
+
+### 残課題（デプロイ前に必ず対応）
+
+- [ ] **CaboCha 学習済みモデルの同梱確認。** GitHub ソースビルドでモデルが入るか要検証。無ければ別途 vendor して COPY。
+- [ ] **コマンドインジェクション修正**（njc.cgi の `echo`＋バッククォート → リスト引数呼び出し）。**公開前必須。**
+- [ ] ビルドの再現性（CRF++/CaboCha のタグ・コミット固定）。
+- [ ] Cloud Run デプロイ設定（メモリ/CPU/concurrency/min-instances）と Artifact Registry へのイメージ push 手順。
+
+### 検証していない前提
+
+Dockerfile はまだローカルでビルド・実行検証していない**たたき台**。特に CaboCha のソースビルドとモデル配置は
+環境依存で失敗しうるため、`docker build` → ローカル `docker run -p 8080:8080` → 校正1件で疎通確認、を最初のステップとする。
+
+### 参考: 見送った選択肢
+
+- **最小改修（VPS 継続）** — さくら VPS のまま修正だけ。最省力だが managed の旨味なし。低トラフィックなら十分有効な代替。
+- **API+フロント分離** — 校正ロジックを HTTP API 化。将来の刷新方針としては有力だが初手のコストが高い。
+- **Cloudflare Workers（素）** — ネイティブバイナリ不可。CaboCha を捨てて NLP を作り替える場合のみ。核を失うので不採用。
 
 ## 未決事項（TODO で埋めていく）
 

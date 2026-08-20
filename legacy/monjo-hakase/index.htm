@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>文章博士：Webベース文章校正支援装置(Monjo-Hakase: Web-based Automatic Text Correction Assistant for Technical Writing)</title>
+<meta name="description" content="係り受け解析にCaboChaを、語順・主語なし指摘等にjcorrectでの判定結果を用いた、フリーで利用可能な自動文章校正支援ツールです。可読性の高いレポート・論文・技術文書の校正支援を実現します。">
+<meta name="keywords" content="文章校正,文章博士,校正支援,Webベース,技術文書,係り受け解析,フリー,CaboCha,jcorrect,Monjo-Hakase,Text correction Assistant,for Technical Writing">
+<link rel="stylesheet" type="text/css" href="njc.css" />
+<!--[if lte IE 7]>
+<style>
+.content { margin-right: -1px; } /* この 1 ピクセルの負のマージンはこのレイアウトのどのカラムにも配置でき、同じ補正効果を持ちます。 */
+ul.nav a { zoom: 1; }  /* zoom プロパティにより、IE の hasLayout をトリガーします。これは、リンク間の余分なホワイトスペースを修正するのに必要です。 */
+</style>
+<![endif]--></head>
+
+<body>
+
+<div class="container">
+  <div class="header"> 
+    <h1 style="margin-bottom: 0px; height=10px;">文章博士（Monjo-Hakase）    </h1>
+    <p>技術文書・テクニカルライティング向け自動校正支援システム（Automatic Text Correcting Assistant for Technical Writing）  </p>
+    
+    <!-- end .header --></div>
+
+<div class="sidebar1">
+<ul class="nav" style="font-size:90%;">
+<li><strong>■更新履歴■ </strong><br /> 
+ システムの更新履歴等についてのお知らせです。 <br /><br />
+ <li><strong>2012/12/10:</strong><br /><div style="padding-left:1em;">jcorrectの改造による高速化が完了しました。</div></li> 
+ <li><strong>2011/11/23:</strong><br /><div style="padding-left:1em;">Rel.2 バグ取りが完了しました。</div></li> 
+ <li><strong>2011/11/05:</strong><br /><div style="padding-left:1em;">Rel.1 サービス開始</div></li> 
+</ul>
+</div>
+
+  <div class="content"> 
+    <h1>本ソフトの説明</h1>
+    <p>      文章博士（もんじょうはかせ）は、Webベースの技術文書・テクニカルライティング向け自動校正支援システムです。
+    主に説明文、論文、技術文書の自動校正にチューンされています。特別なソフトをインストールする必要はありません。<br />
+    <br />
+    利用の開始には、以下のバナーをクリックしてください。</p>
+    <p><a href="./njc.cgi"><img src="start.png" width="471" height="65" alt="利用開始" /></a></p>
+<h2>使用方法</h2>
+    <p>フォームの中に、校正したい文章を入力してください。
+    すると、下に校正結果が表示されます。<br />
+    エラーではないかと指摘された場所には校正結果に色でマークされ、下にエラーの内容一覧と、エラーの解説が表示されます。<br />
+    Webベースで校正を終えた文章は、コピー＆ペーストでお持ち帰りください。<br />
+    印刷用に、PDF版の説明書を用意しました。<a href="./monjo-hakase-tebiki.pdf">こちらからダウンロード</a>できます。 </p>
+    <h2>制限事項</h2>
+    <p>      ・箇条書き文章への対応はされていません。エラーが発生しますが無視して構いません。<br />
+    ・係り受け解析は自動処理のため、エラーが意図しない場所で発生することがあります。<br />
+    　但し、説明文は「係り受けが機械で解析できる」程度の、比較的構造が単純な文で構成されていることが望ましく、<br />
+    　エラーが少ない文章は説明文、論文、技術文書に適した文体であるはずという考え方に基づいています。<br />
+    　よって、エラーは可能なかぎり駆逐することが望ましいでしょう。<br />
+    ・処理速度は、このWebサービスの場合で、概ね2500文字の入力で3秒程度（CPU依存）です。<br />
+　夜間はこれよりも処理速度が遅くなるかもしれません。文の数が増えることによって解析速度が落ちます。<br />
+    　使い方としては、数段落ごとに1回処理し、校正がおわったら、また次の段落を…という使い方が良いでしょう。</p>
+<h2>リンク</h2>
+<table>
+<tr>
+	<td style="width:1em;"></td>
+	<td style="background:#dedede;"><a href="http://www.ubuntulinux.jp/"><img src="ubuntu.png"></a></td>
+	<td>本サービスはUbuntu上で動作しています。</td>
+</tr>
+<tr>
+	<td style="width:1em;"></td>
+	<td style="background:#dedede;"><a href="http://www.perl.org"><img src="powered_by_perl-135px.png"></a></td>
+	<td>本サービスはPerlを用いて開発しました。</td>
+</tr>
+<tr>
+	<td style="width:1em;"></td>
+	<td style="background:#dedede;"><a href="http://code.google.com/p/cabocha/">CaboCha/南瓜</a></td>
+	<td>本サービスは日本語係り受け解析器「CaboCha」の結果を参照しています。</td>
+</tr>
+<tr>
+	<td style="width:1em;"></td>
+	<td style="background:#dedede;"><a href="http://www.ispl.jp/~oosaki/research/tips-jcorrect/">jcorrect</a></td>
+	<td>本サービスは日本語校正支援CUIプログラム「jcorrect」の結果を参照しています。</td>
+</tr>
+<tr>
+	<td style="width:1em;"></td>
+	<td style="background:#dedede;"><a href="http://flavors.me/lunark">Lunarfactory</a></td>
+	<td>本サービスの開発者のページです。</td>
+</tr>
+</table>
+<p></p>
+  </div>
+  <div class="footer">
+    <p>    Monjo-Hakaseは、jcorrect、CaboChaによる係り受け解析を利用した、Webベースで動作する技術文書向け文章校正補助システムです。</p>
+  <!-- end .footer --></div>
+  <!-- end .container --></div>
+</body>
+</html>
