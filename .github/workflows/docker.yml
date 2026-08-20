@@ -85,6 +85,18 @@ jobs:
           if ! echo "$form" | grep -qE 'action="https://'; then
             echo "ERROR: form action is not https://"; docker logs monjo; exit 1
           fi
+
+          # 回帰チェック: コマンドインジェクション（CWE-78）が塞がれていること。
+          # バッククォートでファイル生成を試みるペイロードを投げ、コンテナ内に
+          # そのファイルが作られない（＝シェルでコマンドが実行されない）ことを確認。
+          docker exec monjo rm -f /tmp/INJECTED 2>/dev/null || true
+          curl -s --max-time 30 -X POST http://localhost:8080/njc.cgi \
+            -F 'txtInput=これはテスト`touch /tmp/INJECTED`です。' \
+            -F 'btnKaiseki=校正' >/dev/null || true
+          if docker exec monjo test -f /tmp/INJECTED; then
+            echo "ERROR: command injection is still possible (/tmp/INJECTED created)"; docker logs monjo; exit 1
+          fi
+          echo "injection test passed (no shell execution)"
           echo "SMOKE TEST PASSED"
 
       - name: Stop container

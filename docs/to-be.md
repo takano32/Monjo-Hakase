@@ -51,7 +51,9 @@
 ### 残課題（デプロイ前に必ず対応）
 
 - [ ] **CaboCha 学習済みモデルの同梱確認。** GitHub ソースビルドでモデルが入るか要検証。無ければ別途 vendor して COPY。
-- [ ] **コマンドインジェクション修正**（njc.cgi の `echo`＋バッククォート → リスト引数呼び出し）。**公開前必須。**
+- [x] **コマンドインジェクション修正** — njc.cgi の `echo`＋バッククォートを `IPC::Open2` による
+      シェル非経由呼び出し（文は標準入力へ）に変更。保守版は `app/njc.cgi`、Dockerfile が legacy に
+      上書きする。CI に回帰テスト（バッククォートでファイル生成を試み、作られないことを確認）を追加。
 - [ ] ビルドの再現性（CRF++/CaboCha のタグ・コミット固定）。
 - [ ] Cloud Run デプロイ設定（メモリ/CPU/concurrency/min-instances）と Artifact Registry へのイメージ push 手順。
 

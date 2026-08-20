@@ -85,8 +85,12 @@ RUN ldconfig
 RUN ln -sf /usr/local/bin/cabocha /usr/bin/cabocha
 
 # --- アプリ配置 ---
-# 静的ファイルと CGI を DocumentRoot へ、jcorrect-hs は njc.cgi のハードコードパスへ
+# 静的ファイルと CGI を DocumentRoot へ、jcorrect-hs は njc.cgi のハードコードパスへ。
+# njc.cgi は legacy を土台に、保守版（app/）で上書きする。
+#   legacy/ … 原状のアーカイブ（無改変）
+#   app/    … 保守対象。現状はコマンドインジェクション修正版 njc.cgi のみ。
 COPY legacy/monjo-hakase/ /var/www/html/
+COPY app/njc.cgi /var/www/html/njc.cgi
 RUN cp /var/www/html/jcorrect-hs /var/www/jcorrect-hs \
     && chmod +x /var/www/jcorrect-hs /var/www/html/njc.cgi /var/www/html/jcorrect-hs \
     # トップは index.htm を使う
