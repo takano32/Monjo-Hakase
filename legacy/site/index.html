@@ -1,0 +1,155 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:fb="http://ogp.me/ns/fb#">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>文章博士：Webベース文章校正支援装置(Monjo-Hakase: Web-based Automatic Text Correction Assistant for Technical Writing)</title>
+<meta name="description" content="係り受け解析にCaboChaを、語順・主語なし指摘等にjcorrectでの判定結果を用いた、フリーで利用可能な自動文章校正支援ツールです。可読性の高いレポート・論文・技術文書の校正支援を実現します。">
+<meta name="keywords" content="文章校正,文章博士,校正支援,Webベース,技術文書,係り受け解析,フリー,CaboCha,jcorrect,Monjo-Hakase,Text correction Assistant,for Technical Writing">
+<meta name="msvalidate.01" content="A49114F083956DB1A479633D71A32DD9" />
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-27485278-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+<link rel="stylesheet" type="text/css" href="njc.css" />
+<!--[if lte IE 7]>
+<style>
+.content { margin-right: -1px; } /* この 1 ピクセルの負のマージンはこのレイアウトのどのカラムにも配置でき、同じ補正効果を持ちます。 */
+ul.nav a { zoom: 1; }  /* zoom プロパティにより、IE の hasLayout をトリガーします。これは、リンク間の余分なホワイトスペースを修正するのに必要です。 */
+</style>
+<![endif]--></head>
+
+<body>
+<div class="container">
+  <div class="header"> 
+    <h1 style="margin-bottom: 0px; height=10px;">文章博士（Monjo-Hakase）    </h1>
+    <p>技術文書・テクニカルライティング向け自動校正支援システム（Automatic Text Correcting Assistant for Technical Writing）  <br /></p>
+    
+    <!-- end .header --></div>
+
+<div class="sidebar1">
+<ul class="nav" style="font-size:90%;">
+<li><strong>■更新履歴■ </strong><br /> 
+ システムの更新履歴等についてのお知らせです。 <br /><br />
+ <li><strong>2013/07/08:</strong><br /><div style="padding-left:1em;">文章博士ソースコード（Rev.2）をUPしました。自分で文章博士を設置したいときにご利用下さい。本サイトにおいてあるものとのコードの違いは、Google Analytics等のトラッキングコードが入っているかどうかの違いとなっています。</div></li>
+ <li><strong>2013/02/28:</strong><br /><div style="padding-left:1em;">解析エンジン類のバージョンを上げました。それぞれCaboCha-0.64、MeCab-0.994となります。<br />少々バージョンが低いのはUbuntu NLP Repositoryのバージョン追っかけスピードが少々遅いことによるものです。</div></li> 
+ <li><strong>2012/05/18:</strong><br /><div style="padding-left:1em;">サーバ移転を行いました。メモリが2倍に拡充したので、多少使いやすくなっていると思います。</span></li> 
+ <li><strong>2012/12/10:</strong><br /><div style="padding-left:1em;">jcorrectの改造による高速化が完了しました。</div></li> 
+ <li><strong>2011/11/23:</strong><br /><div style="padding-left:1em;">Rel.2 バグ取りが完了しました。</div></li> 
+ <li><strong>2011/11/05:</strong><br /><div style="padding-left:1em;">Rel.1 サービス開始</div></li> 
+</ul>
+</div>
+
+  <div class="content"> 
+    <h1>本ソフトの説明</h1>
+    <p>      文章博士（もんじょうはかせ）は、Webベースの技術文書・テクニカルライティング向け自動校正支援システムです。
+    主に説明文、論文、技術文書の自動校正にチューンされています。特別なソフトをインストールする必要はありません。<br />
+    <br />
+    利用の開始には、以下のバナーをクリックしてください。</p>
+    <p><a href="./njc.cgi"><img src="start.png" width="471" height="65" alt="利用開始" /></a>
+<div id="fb-root"></div>
+<div style="padding-left:1em;">
+<div class="ninja_onebutton">
+<script type="text/javascript">
+//<![CDATA[
+(function(d){
+if(typeof(window.NINJA_CO_JP_ONETAG_BUTTON_4dd6530891f02431b94410e6ec164e6e)=='undefined'){
+    document.write("<sc"+"ript type='text\/javascript' src='http:\/\/omt.shinobi.jp\/b\/4dd6530891f02431b94410e6ec164e6e'><\/sc"+"ript>");
+}else{
+    window.NINJA_CO_JP_ONETAG_BUTTON_4dd6530891f02431b94410e6ec164e6e.ONETAGButton_Load();}
+})(document);
+//]]>
+</script><span class="ninja_onebutton_hidden" style="display:none;"></span><span style="display:none;" class="ninja_onebutton_hidden"></span>
+<br />
+<a href="http://b.hatena.ne.jp/entry/http://monjo.lunark.org/" class="hatena-bookmark-button" data-hatena-bookmark-title="文章博士：Webベース文章校正支援装置(Monjo-Hakase: Web-based Automatic Text Correction Assistant for Technical Writing)" data-hatena-bookmark-layout="standard-balloon" data-hatena-bookmark-lang="ja" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only@2x.png" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+<a href="javascript:void window.open('http://bookmarks.yahoo.co.jp/bookmarklet/showpopup?t='+encodeURIComponent(document.title)+'&amp;u='+encodeURIComponent(location.href)+'&amp;ei=UTF-8','_blank','width=550,height=480,left=100,top=50,scrollbars=1,resizable=1',0);"><img src="http://i.yimg.jp/images/ybm/blogparts/addmy_btn.gif" width="125" height="17" alt="Yahoo!ブックマークに登録" style="border:none;"></a>
+</div>
+</div>
+</p>
+<h2>使用方法</h2>
+    <p>フォームの中に、校正したい文章を入力してください。
+    すると、下に校正結果が表示されます。<br />
+    エラーではないかと指摘された場所には校正結果に色でマークされ、下にエラーの内容一覧と、エラーの解説が表示されます。<br />
+    Webベースで校正を終えた文章は、コピー＆ペーストでお持ち帰りください。<br />
+    印刷用に、PDF版の説明書を用意しました。<a href="./monjo-hakase-tebiki.pdf">こちらからダウンロード</a>できます。 </p>
+    <h2>制限事項</h2>
+    <p>      ・箇条書き文章への対応はされていません。エラーが発生しますが無視して構いません。<br />
+    ・係り受け解析は自動処理のため、エラーが意図しない場所で発生することがあります。<br />
+    　但し、説明文は「係り受けが機械で解析できる」程度の、比較的構造が単純な文で構成されていることが望ましく、<br />
+    　エラーが少ない文章は説明文、論文、技術文書に適した文体であるはずという考え方に基づいています。<br />
+    　よって、エラーは可能なかぎり駆逐することが望ましいでしょう。<br />
+    ・処理速度は、このWebサービスの場合で、概ね2500文字の入力で3秒程度（CPU依存）です。<br />
+　夜間はこれよりも処理速度が遅くなるかもしれません。文の数が増えることによって解析速度が落ちます。<br />
+    　使い方としては、数段落ごとに1回処理し、校正がおわったら、また次の段落を…という使い方が良いでしょう。</p>
+<h2>ライセンスとソースコード配布について</h2>
+    <p>      jcorrectがGPLであり、外部リンク（標準入出力によるデータのやり取り）を行うため、念のためBSDLとGPLのデュアルライセンスで設定しています。作者がOSSにおけるライセンス設定に不慣れなため、ライセンスの宣言方法が間違っているなどご指摘の点がありましたら気軽にページ末尾の掲示板にてお知らせ下さいませ。<br />
+<br />
+      また、UTF-8対応のための改変と文章博士で使わないルーチンを削除している改造版jcorrect（jcorrect-hs）を同梱します。<br />
+      インストールにはVPSや自宅サーバ等、root権限が持てるサーバとPerlの実行環境、MeCab、CaboChaの実行環境を要します。<br />
+      <br />
+      なお、このソフトウェアはコンソールがUTF-8文字コードを解することを前提に作っております。<br />
+    よってCaboChaの構築はUTF-8にて行ってください。<br />
+    なお、このソフトウェア用に環境を新たに用意する場合は、<a href="http://cl.naist.jp/~eric-n/ubuntu-nlp/" target="_blank">Ubuntu nlp Reposiory</a>のCaboChaがお勧めです。<br />
+    開発環境はUbuntu10.04LTS+nlp+CaboCha0.60です。<br />
+<br />
+    <a href="monjo-hakase-r2.zip">文章博士（Rev.2） Source</a><br />
+<br />
+</p>
+<h2>今後のウェブサービスとしての設置予定</h2>
+    <p>本ソフトウェアは現在安価なVPS上に、皆様が利用可能なウェブサービスとして設置しております。<br>無事にサーバ移転も済み、私（Lunar-K）が失職しない限りは維持が可能ですので、今後も安心してご利用くださいませ。</p>
+
+<h2>リンク</h2>
+<table>
+<tr>
+	<td style="width:1em;"></td>
+	<td style="background:#dedede;"><a href="http://www.ubuntulinux.jp/"><img src="ubuntu.png"></a></td>
+	<td>本サービスはUbuntu上で動作しています。</td>
+</tr>
+<tr>
+	<td style="width:1em;"></td>
+	<td style="background:#dedede;"><a href="http://www.perl.org"><img src="powered_by_perl-135px.png"></a></td>
+	<td>本サービスはPerlを用いて開発しました。</td>
+</tr>
+<tr>
+	<td style="width:1em;"></td>
+	<td style="background:#dedede;"><a href="http://code.google.com/p/cabocha/">CaboCha/南瓜</a></td>
+	<td>本サービスは日本語係り受け解析器「CaboCha」の結果を参照しています。</td>
+</tr>
+<tr>
+	<td style="width:1em;"></td>
+	<td style="background:#dedede;"><a href="http://www.ispl.jp/~oosaki/research/tips-jcorrect/">jcorrect</a></td>
+	<td>本サービスは日本語校正支援CUIプログラム「jcorrect」の結果を参照しています。</td>
+</tr>
+<tr>
+	<td style="width:1em;"></td>
+	<td style="background:#dedede;"><a href="http://joyjoy.com/JOY.html"><img src="joyicon1.gif" width="88" height="31" alt="JOY"></a></td>
+	<td>本サービスはJapanese Open Yellowpageに登録申請中です。</td>
+</tr>
+<tr>
+	<td style="width:1em;"></td>
+	<td style="background:#dedede;"><a href="http://flavors.me/lunark">Lunarfactory</a></td>
+	<td>本サービスの開発者のページです。</td>
+</tr>
+</table>
+<p></p>
+<h2>質問掲示板</h2>
+<p>本掲示板等への質問などありましたら、以下埋め込み型のBBSをご用意しておりますのでご連絡くださいませ。<br>なお、雑誌・ニュースサイト等への掲載につきましては、ソースコード公開次第ということにさせていただきたく思います。よろしくお願いいたします。</p>
+<script>
+BbsPath='http://monjo.lunark.org/bbs-u3/';
+</script>
+<div id="BbsScript"><a href="http://web-sozai.seesaa.net/">ページ埋め込み型掲示板</a></div>
+<script src="http://monjo.lunark.org/bbs-u3/bbs.js" type="text/javascript" charset="utf-8" async="async" defer="defer"></script>
+  </div>
+  <div class="footer">
+    <p>    Monjo-Hakaseは、jcorrect、CaboChaによる係り受け解析を利用した、Webベースで動作する技術文書向け文章校正補助システムです。<br /></p>
+  <!-- end .footer --></div>
+  <!-- end .container --></div>
+</body>
+</html>
