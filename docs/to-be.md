@@ -3,6 +3,20 @@
 > この文書は「リブート後にこうしたい」という目標・方針を書く場所。決定が変わったら更新する。
 > 現状（引き継いだ旧システムの実態）は [`as-is.md`](./as-is.md) を参照（そちらは固定・不変）。
 
+## 進捗サマリ（2026-08-21 時点）
+
+**リブートの土台は稼働済み。** 公開URL: https://monjo-hakase-v3aibpl2aa-an.a.run.app （Cloud Run / 東京）
+
+- [x] Docker 化（CRF++/CaboCha ソースビルド込み）と Cloud Run デプロイ
+- [x] HTTPS 化（TLS 終端 + フォーム action の https 化）
+- [x] コマンドインジェクション（CWE-78）修正 + CI 回帰テスト
+- [x] CI: ビルド/スモーク/セキュリティ回帰（`docker-build.yml`）
+- [x] CI: Cloud Run 自動デプロイ（`deploy.yml`, WIF キーレス認証）
+- [ ] フロント刷新（死んだ外部ウィジェット除去・landing 現代化）
+- [ ] 独自ドメイン割り当て（`monjo.lunark.org` → Cloud Run）
+- [ ] ビルド再現性（CRF++/CaboCha のコミット固定）
+- [ ] `--max-instances` 等の運用値確定 + 予算アラート
+
 ## 目的
 
 旧「文章博士」の思想 ―― *機械が係り受けを解析できる文＝分かりやすい技術文* ―― を引き継ぎつつ、
