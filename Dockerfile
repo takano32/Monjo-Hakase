@@ -20,7 +20,8 @@ FROM ubuntu:22.04 AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential autoconf automake libtool git ca-certificates \
+        build-essential autoconf automake libtool autoconf-archive \
+        pkg-config gettext git ca-certificates \
         mecab libmecab-dev mecab-ipadic-utf8 \
     && rm -rf /var/lib/apt/lists/*
 
@@ -44,7 +45,9 @@ RUN git clone --depth 1 https://github.com/taku910/crfpp.git /tmp/crfpp \
 # 文字コードは MeCab 辞書(UTF-8)に合わせて UTF8 を指定
 RUN git clone --depth 1 https://github.com/taku910/cabocha.git /tmp/cabocha \
     && cd /tmp/cabocha \
-    && ( test -f configure || ./autogen.sh || autoreconf -i ) \
+    # Git ミラーは configure を含むが install-sh 等の補助ファイルを欠くため、
+    # autoreconf -fi で不足ファイルを生成し直す。
+    && autoreconf -fi \
     && ./configure --prefix=/usr/local \
         --with-charset=UTF8 \
         --with-posset=IPA \
