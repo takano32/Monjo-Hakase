@@ -1,0 +1,100 @@
+name: docker-build
+
+# 手元に Docker が無いため、イメージのビルド検証は CI で行う。
+# 目的:
+#   1. Dockerfile が実際にビルドできるか（特に CaboCha/CRF++ のソースビルド）
+#   2. 起動したコンテナで校正が最後まで通るか（＝CaboCha モデルが機能するか）
+#   3. master では GHCR にイメージを push（後で Cloud Run 等へ持っていく用）
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    paths:
+      - Dockerfile
+      - docker/**
+      - legacy/**
+      - .github/workflows/docker.yml
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # まずローカルにロードしてスモークテストする（push はテスト後）
+      - name: Build image (load locally)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: monjo-hakase:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test (起動 → 校正1件が通るか)
+        run: |
+          set -euo pipefail
+          docker run -d --name monjo -p 8080:8080 monjo-hakase:ci
+
+          # 起動待ち: トップ（入力フォーム）が 200 になるまで最大60秒
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/ || true)
+            if [ "$code" = "200" ]; then echo "up (HTTP 200)"; break; fi
+            echo "waiting... ($i) code=$code"
+            sleep 2
+            if [ "$i" = "30" ]; then echo "ERROR: server did not become ready"; docker logs monjo; exit 1; fi
+          done
+
+          # 校正リクエストを投げ、CGI が最後まで通ったか検証
+          body=$(curl -s --max-time 30 -X POST http://localhost:8080/njc.cgi \
+            -F 'txtInput=この文章はとても長くて冗長であるということができるかもしれないと思われる。' \
+            -F 'btnKaiseki=校正')
+
+          echo "----- response head -----"
+          echo "$body" | head -40
+
+          # CGI が異常終了していないこと（CGI::Carp fatalsToBrowser の痕跡が無いこと）
+          if echo "$body" | grep -qiE 'Software error|Can.t exec|command not found|No such file'; then
+            echo "ERROR: CGI reported a runtime error"; docker logs monjo; exit 1
+          fi
+          # 校正結果セクションまで到達していること
+          if ! echo "$body" | grep -q '校正結果'; then
+            echo "ERROR: '校正結果' section not found — pipeline did not complete"; docker logs monjo; exit 1
+          fi
+          echo "SMOKE TEST PASSED"
+
+      - name: Stop container
+        if: always()
+        run: docker rm -f monjo || true
+
+      # スモークが通ったら GHCR へ push（master のみ）
+      - name: Log in to GHCR
+        if: github.ref == 'refs/heads/master'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image to GHCR
+        if: github.ref == 'refs/heads/master'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
