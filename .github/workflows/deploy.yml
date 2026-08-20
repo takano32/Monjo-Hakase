@@ -1,0 +1,69 @@
+name: deploy-cloudrun
+
+# Cloud Run へのデプロイ。ソース(.)を Cloud Build でビルドし Cloud Run へ反映する。
+# 手元に Docker が無くても、この CI 経由で本番反映できる。
+#
+# ── 事前準備（GCP 側・一度だけ）───────────────────────────────────────────
+#  1. API 有効化: run / cloudbuild / artifactregistry（既に有効化済み）
+#  2. Workload Identity Federation（キーレス認証）を用意し、以下を
+#     GitHub の Settings → Secrets and variables → Actions に登録:
+#       - Variables:
+#           GCP_PROJECT_ID      例) takano32
+#           GCP_REGION          例) asia-northeast1
+#           CLOUD_RUN_SERVICE   例) monjo-hakase
+#       - Secrets:
+#           WIF_PROVIDER        projects/<番号>/locations/global/workloadIdentityPools/<pool>/providers/<provider>
+#           WIF_SERVICE_ACCOUNT deployer@<project>.iam.gserviceaccount.com
+#     サービスアカウントには roles/run.admin, roles/cloudbuild.builds.editor,
+#     roles/artifactregistry.writer, roles/iam.serviceAccountUser を付与する。
+# ────────────────────────────────────────────────────────────────────────
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - Dockerfile
+      - docker/**
+      - legacy/**
+      - .github/workflows/deploy.yml
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # WIF に必要
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        name: Authenticate to Google Cloud (WIF)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run (build from source)
+        run: |
+          gcloud run deploy "${{ vars.CLOUD_RUN_SERVICE }}" \
+            --source . \
+            --project "${{ vars.GCP_PROJECT_ID }}" \
+            --region "${{ vars.GCP_REGION }}" \
+            --allow-unauthenticated \
+            --memory 1Gi \
+            --cpu 1 \
+            --concurrency 4 \
+            --timeout 60 \
+            --port 8080 \
+            --quiet
+
+      - name: Show service URL
+        run: |
+          gcloud run services describe "${{ vars.CLOUD_RUN_SERVICE }}" \
+            --project "${{ vars.GCP_PROJECT_ID }}" \
+            --region "${{ vars.GCP_REGION }}" \
+            --format 'value(status.url)'
