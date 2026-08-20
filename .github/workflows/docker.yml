@@ -18,7 +18,8 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository }}
+  # GHCR はリポジトリ名が小文字必須。github.repository は Monjo-Hakase を含むため直書きする。
+  IMAGE_NAME: ghcr.io/takano32/monjo-hakase
 
 jobs:
   build:
