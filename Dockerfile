@@ -63,7 +63,7 @@ RUN git clone --depth 1 https://github.com/taku910/cabocha.git /tmp/cabocha \
 # ============================================================
 # Stage 2: フロントエンド（Astro）を静的ビルド
 # ============================================================
-FROM node:22-alpine AS web
+FROM node:24-alpine AS web
 
 WORKDIR /web
 # 依存だけ先に入れてレイヤキャッシュを効かせる

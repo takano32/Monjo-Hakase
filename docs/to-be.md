@@ -50,7 +50,7 @@
 ### フロントエンド（2026-09 刷新）
 
 - **構成:** `web/` に Astro（静的出力）。`/` が校正画面、`/about/` が使い方・備考（旧トップページの情報）。
-  Docker のビルド段（`node:22-alpine`）で `npm run build` し、`dist/` を DocumentRoot に重ねる。
+  Docker のビルド段（`node:24-alpine`、現行 LTS）で `npm run build` し、`dist/` を DocumentRoot に重ねる。
 - **API:** `app/njc.cgi` に `format=json` を追加。解析ロジックが積み上げたグローバル変数
   （文・書式付き文・エラー配列・該当した解説）をそのまま JSON にして返す。校正ロジックは無改変。
   HTML 出力（従来 UI）は残し、JS 無効時のフォールバックにしている。
