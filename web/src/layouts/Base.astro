@@ -1,0 +1,70 @@
+---
+// 共通レイアウト。ヘッダー（ブランド＋ナビ）とフッターを持つ。
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** ナビの現在地。'app' | 'about' */
+  current?: 'app' | 'about';
+}
+
+const SITE_NAME = '文章博士（Monjo-Hakase）';
+const {
+  title,
+  description = '係り受け解析（CaboCha）と jcorrect を用いた、技術文書・論文向けの無料の日本語 自動文章校正支援ツール。主語なし・冗長表現・語順・文節の長さ・係り受けの深さと量を指摘します。',
+  current = 'app',
+} = Astro.props;
+const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} — 技術文書向け 日本語校正支援`;
+const REPO = 'https://github.com/takano32/Monjo-Hakase';
+---
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#f6f1e7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#171512" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href="/" aria-label="文章博士 トップ">
+          <span class="seal" aria-hidden="true">博</span>
+          <span class="name">
+            <b>文章博士</b>
+            <small>Monjo-Hakase</small>
+          </span>
+        </a>
+        <nav class="site-nav" aria-label="サイト内">
+          <a href="/" aria-current={current === 'app' ? 'page' : undefined}>校正する</a>
+          <a href="/about/" aria-current={current === 'about' ? 'page' : undefined}>使い方・備考</a>
+          <a href={REPO} rel="noopener" target="_blank">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <slot />
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <span>文章博士は、jcorrect と CaboCha による係り受け解析を利用した、技術文書向けの文章校正補助システムです。</span>
+        <span>原作: Lunar-K（2011–2015） / リブート: <a href={REPO} rel="noopener" target="_blank">takano32/Monjo-Hakase</a></span>
+        <span>BSDL / GPL デュアルライセンス</span>
+      </div>
+    </footer>
+  </body>
+</html>

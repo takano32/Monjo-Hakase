@@ -867,6 +867,93 @@ sub subJCorrect(@) {
 }
 
 #************************************************************************
+# SUB ROUTINE : 校正結果の JSON 出力（新フロントエンド用 API）
+#   引数１：CGI オブジェクト
+#   引数２：入力文字列（正規化後）
+#
+#   POST/GET パラメータ format=json のとき、HTML の代わりに校正結果を
+#   JSON で返す。Astro 製フロントエンド（web/）が fetch で呼び出し、
+#   ページ遷移なしに結果を描画する。HTML 出力（従来 UI）は無改変で残し、
+#   JavaScript 無効時のフォールバックとして使う。
+#
+#   出力は解析ロジックが積み上げたグローバル変数（@gaStatement,
+#   @gaCSSStatement, @gaError, %ghError）を素直に写したもので、
+#   校正ロジック側には一切手を入れていない。
+#************************************************************************
+sub subPrintJson {
+    my ($pCGI, $pInput) = @_;
+    require JSON::PP;
+
+    my @paSentences = ();
+    my @paErrors    = ();
+    my %phCount     = ();
+    my ($pI, $pJ);
+
+    for ($pI=0; $pI<=$#gaStatement; $pI++) {
+        my $pHtml = defined($gaCSSStatement[$pI]) ? $gaCSSStatement[$pI]
+                                                  : $gaStatement[$pI];
+        push @paSentences, {
+            no   => $pI+1,
+            text => $gaStatement[$pI],
+            html => $pHtml,
+        };
+        for ($pJ=1; $pJ<=$gaErrorCnt[$pI]; $pJ++) {
+            my $pType = $gaError[$pI][$pJ][1] + 0;
+            push @paErrors, {
+                sentence => $pI+1,
+                type     => $pType,
+                label    => $cgaERR_TYPE[$pType],
+                cssClass => $ghClass{$pType},
+                message  => $gaError[$pI][$pJ][2],
+                phrase   => $gaError[$pI][$pJ][3],
+            };
+            $phCount{$pType}++;
+        }
+    }
+
+    # エラー種別の解説（該当したものだけ）
+    my %phComment = (
+        $cgERR_SUBJECT    => [$cgCMNT_SUBJECT_TITLE,    \@cgaCMNT_SUBJECT],
+        $cgERR_AVOID      => [$cgCMNT_AVOID_TITLE,      \@cgaCMNT_AVOID],
+        $cgERR_REVERSED   => [$cgCMNT_REVERSED_TITLE,   \@cgaCMNT_REVERSED],
+        $cgERR_PHRASE     => [$cgCMNT_PHRASE_TITLE,     \@cgaCMNT_PHRASE],
+        $cgERR_SENTENCE   => [$cgCMNT_SENTENCE_TITLE,   \@cgaCMNT_SENTENCE],
+        $cgERR_CONNECTION => [$cgCMNT_CONNECTION_TITLE, \@cgaCMNT_CONNECTION],
+        $cgERR_CHAIN      => [$cgCMNT_CHAIN_TITLE,      \@cgaCMNT_CHAIN],
+    );
+    my @paExplain = ();
+    foreach my $pType (sort { $a <=> $b } keys %phComment) {
+        next unless ($ghError{$pType} == $cgTRUE);
+        my $pTitle = $phComment{$pType}[0];
+        $pTitle =~ s/^[\s　]*＜//; $pTitle =~ s/＞\s*$//;
+        push @paExplain, {
+            type  => $pType+0,
+            title => $pTitle,
+            lines => [ @{ $phComment{$pType}[1] } ],
+        };
+    }
+
+    my %phSummary = ();
+    foreach my $pType (keys %ghClass) { $phSummary{$pType} = ($phCount{$pType} || 0) + 0; }
+
+    my $pJson = JSON::PP->new->utf8(0)->canonical(1);
+    my $pBody = $pJson->encode({
+        ok           => JSON::PP::true(),
+        input        => $pInput,
+        sentences    => \@paSentences,
+        errors       => \@paErrors,
+        summary      => \%phSummary,
+        explanations => \@paExplain,
+        errorTypes   => [ map { { type => $_+0, label => $cgaERR_TYPE[$_], cssClass => $ghClass{$_} } } (1..7) ],
+    });
+
+    print $pCGI->header(-type=>'application/json', -charset=>'utf-8',
+                        -Cache_Control=>'no-store');
+    print $pBody, "\n";
+    return;
+}
+
+#************************************************************************
 # MAIN ROUTINE
 #************************************************************************
 #========================================================================
@@ -984,6 +1071,14 @@ my $pI;              #添字
 my $pJ;              #添字
 
 
+
+# JSON API モード（新フロントエンド用）。format=json なら JSON を返して終了。
+my $pFormat = $pmdlCGI->param('format');
+$pFormat = '' unless defined $pFormat;
+if ($pFormat eq 'json') {
+    &subPrintJson($pmdlCGI, $ptxtInput);
+    exit 0;
+}
 
 # ヘッダ部;
 print $pmdlCGI->header(-charset=>'utf-8');

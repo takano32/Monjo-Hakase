@@ -18,6 +18,11 @@
         Require all granted
     </Directory>
 
+    # Astro が出力するハッシュ付きアセットは内容が変われば URL も変わるので長期キャッシュ可
+    <Location "/_astro/">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </Location>
+
     # /var/www/jcorrect-hs（DocumentRoot 外）は Web 公開しない。
     # njc.cgi からファイルパスとして参照されるだけ。
 

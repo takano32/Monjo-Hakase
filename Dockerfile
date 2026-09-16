@@ -1,16 +1,18 @@
-# 文章博士（Monjo-Hakase）— Cloud Run 用コンテナ（たたき台）
+# 文章博士（Monjo-Hakase）— Cloud Run 用コンテナ
 #
 # 現行の Perl CGI + jcorrect + CaboCha + MeCab + nkf スタックを「そのまま」動かす
-# 最小移植版。Cloud Run は $PORT（既定 8080）で HTTP を待ち受けるコンテナを要求するため、
+# 移植版に、Astro 製の静的フロントエンド（web/）を載せた構成。
+# Cloud Run は $PORT（既定 8080）で HTTP を待ち受けるコンテナを要求するため、
 # Apache を $PORT で前面起動し、mod_cgid で njc.cgi を実行する。
 #
-# ── 注意（未確定ポイント。docs/to-be.md 参照）──────────────────────────────
-#  * CaboCha / CRF++ はソースからビルドする。GitHub の taku910/{crfpp,cabocha}
-#    を clone してビルドしているが、CaboCha の学習済みモデル同梱状況は要検証。
-#    モデルが無いと係り受け解析が動かないため、ビルド後に動作確認すること。
-#    モデルを別途持っている場合は docker/vendor/ に置いて COPY する方式に変える。
-#  * as-is.md に記載のコマンドインジェクション（njc.cgi の echo+バッククォート）は
-#    このコンテナ化では未修正のまま。公開前に必ず修正すること。
+#   Stage 1 (builder) … CRF++ / CaboCha をソースビルド
+#   Stage 2 (web)     … Astro フロントエンドを静的ビルド（node）
+#   Stage 3 (runtime) … Apache + Perl CGI + MeCab + nkf。DocumentRoot に
+#                       legacy → app/njc.cgi → web/dist の順で上書き配置
+#
+# ── 注意（docs/to-be.md 参照）────────────────────────────────────────────
+#  * CaboCha / CRF++ は GitHub の taku910/{crfpp,cabocha} を clone してビルド。
+#    再現性のためコミット固定は未対応（TODO）。
 # ────────────────────────────────────────────────────────────────────────
 
 # ============================================================
@@ -59,7 +61,20 @@ RUN git clone --depth 1 https://github.com/taku910/cabocha.git /tmp/cabocha \
     && ldconfig
 
 # ============================================================
-# Stage 2: 実行イメージ
+# Stage 2: フロントエンド（Astro）を静的ビルド
+# ============================================================
+FROM node:22-alpine AS web
+
+WORKDIR /web
+# 依存だけ先に入れてレイヤキャッシュを効かせる
+COPY web/package.json web/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY web/ ./
+RUN npm run build
+# → /web/dist に index.html, about/index.html, _astro/* が生成される
+
+# ============================================================
+# Stage 3: 実行イメージ
 # ============================================================
 FROM ubuntu:22.04
 
@@ -88,20 +103,27 @@ RUN ln -sf /usr/local/bin/cabocha /usr/bin/cabocha
 # 静的ファイルと CGI を DocumentRoot へ、jcorrect-hs は njc.cgi のハードコードパスへ。
 # njc.cgi は legacy を土台に、保守版（app/）で上書きする。
 #   legacy/ … 原状のアーカイブ（無改変）
-#   app/    … 保守対象。現状はコマンドインジェクション修正版 njc.cgi のみ。
+#   app/    … 保守対象。コマンドインジェクション修正 + JSON API 追加版 njc.cgi。
 COPY legacy/monjo-hakase/ /var/www/html/
 COPY app/njc.cgi /var/www/html/njc.cgi
 RUN cp /var/www/html/jcorrect-hs /var/www/jcorrect-hs \
-    && chmod +x /var/www/jcorrect-hs /var/www/html/njc.cgi /var/www/html/jcorrect-hs \
-    # トップは index.htm を使う
-    && ln -sf /var/www/html/index.htm /var/www/html/index.html
+    && chmod +x /var/www/jcorrect-hs /var/www/html/njc.cgi /var/www/html/jcorrect-hs
+
+# 新フロントエンド（Astro の静的ビルド）を最後に重ねる。
+#   /            … 校正画面（index.html）。旧 index.htm は /index.htm としてアーカイブ参照用に残る
+#   /about/      … 使い方・備考（旧トップページの情報）
+#   /_astro/*    … ハッシュ付きの CSS/JS
+# njc.cgi は format=json で JSON を返し、フロントエンドが fetch で呼ぶ。
+COPY --from=web /web/dist/ /var/www/html/
+# 旧サイト配布の手引き PDF（備考ページからリンク）
+COPY legacy/site/monjo-hakase-tebiki.pdf /var/www/html/monjo-hakase-tebiki.pdf
 
 # --- Apache 設定（$PORT 待受 + CGI 実行）---
 # 設定は entrypoint が $PORT を差し込んでレンダリングする（テンプレート方式）
 COPY docker/apache-monjo.conf.template /etc/apache2/apache-monjo.conf.template
 COPY docker/ports.conf.template /etc/apache2/ports.conf.template
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN a2enmod cgid setenvif \
+RUN a2enmod cgid setenvif headers \
     && chmod +x /usr/local/bin/entrypoint.sh \
     # Apache をフォアグラウンド前提に。ログは stdout/stderr へ
     && ln -sf /dev/stdout /var/log/apache2/access.log \

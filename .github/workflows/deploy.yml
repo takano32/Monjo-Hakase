@@ -26,6 +26,8 @@ on:
       - Dockerfile
       - docker/**
       - legacy/**
+      - app/**
+      - web/**
       - .github/workflows/deploy.yml
 
 jobs:

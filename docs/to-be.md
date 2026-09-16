@@ -3,7 +3,7 @@
 > この文書は「リブート後にこうしたい」という目標・方針を書く場所。決定が変わったら更新する。
 > 現状（引き継いだ旧システムの実態）は [`as-is.md`](./as-is.md) を参照（そちらは固定・不変）。
 
-## 進捗サマリ（2026-08-21 時点）
+## 進捗サマリ（2026-09-16 時点）
 
 **リブートの土台は稼働済み。** 公開URL: https://monjo-hakase-v3aibpl2aa-an.a.run.app （Cloud Run / 東京）
 
@@ -12,7 +12,7 @@
 - [x] コマンドインジェクション（CWE-78）修正 + CI 回帰テスト
 - [x] CI: ビルド/スモーク/セキュリティ回帰（`docker-build.yml`）
 - [x] CI: Cloud Run 自動デプロイ（`deploy.yml`, WIF キーレス認証）
-- [ ] フロント刷新（死んだ外部ウィジェット除去・landing 現代化）
+- [x] フロント刷新（Astro。トップ＝校正画面、旧トップの情報は `/about/` へ。死んだ外部ウィジェット除去）
 - [ ] 独自ドメイン割り当て（`monjo.lunark.org` → Cloud Run）
 - [ ] ビルド再現性（CRF++/CaboCha のコミット固定）
 - [ ] `--max-instances` 等の運用値確定 + 予算アラート
@@ -28,6 +28,7 @@
 |---|---|
 | **引き継ぐ** | 校正の中核思想、7 種のエラー分類、係り受けベースの読みやすさ評価、フリー/OSS での公開 |
 | **捨てる** | Perl CGI 前提、死んだ第三者ウィジェット（忍者/はてな/Yahoo!/埋め込みBBS）、旧 GA（ga.js）、HTTP 平文運用 |
+| **捨てた（2026-09）** | CGI が HTML を組み立てる UI。校正ロジックは残し、表示は Astro 製フロントエンドへ分離 |
 | **要検討** | 解析エンジンを CaboCha/MeCab/jcorrect のまま使うか、現行の形態素・係り受け解析器へ載せ替えるか |
 
 ## 非機能要件（方針）
@@ -46,11 +47,26 @@
 - 校正ツールは低頻度・バースト的トラフィック。**scale-to-zero でアイドル課金ゼロ**、リクエスト単位課金が合う。
 - TLS は Cloud Run が終端するため、旧環境の「HTTP 平文のみ」問題が自動的に解消する。
 
+### フロントエンド（2026-09 刷新）
+
+- **構成:** `web/` に Astro（静的出力）。`/` が校正画面、`/about/` が使い方・備考（旧トップページの情報）。
+  Docker のビルド段（`node:22-alpine`）で `npm run build` し、`dist/` を DocumentRoot に重ねる。
+- **API:** `app/njc.cgi` に `format=json` を追加。解析ロジックが積み上げたグローバル変数
+  （文・書式付き文・エラー配列・該当した解説）をそのまま JSON にして返す。校正ロジックは無改変。
+  HTML 出力（従来 UI）は残し、JS 無効時のフォールバックにしている。
+- **UI:** フォーム送信を fetch に置き換え、本文ハイライト・指摘一覧（文番号→本文へジャンプ）・解説を
+  同一ページに描画。下書きは `localStorage`、Ctrl/⌘+Enter で送信、ダークモード・スマートフォン対応。
+  旧 `njc.css` のクラス名（`error-missing-subject` 等）はそのまま尊重し、色だけ紙色に馴染ませた。
+- **開発:** `cd web && MONJO_API_ORIGIN=http://localhost:8080 npm run dev` で、コンテナ（or 本番）の
+  CGI へ中継しながらフロントだけ編集できる。
+- **今後:** 校正ロジックの API サーバ化（Perl 依存の切り離し）は、JSON 化で入口ができたので次段で検討。
+
 ### 実装状況（このリポジトリ）
 
 | ファイル | 役割 |
 |----------|------|
-| `Dockerfile` | 2段ビルド。builder で CRF++/CaboCha をソースビルド、実行段に Apache+Perl CGI+MeCab+nkf を同梱 |
+| `Dockerfile` | 3段ビルド。builder で CRF++/CaboCha をソースビルド、web で Astro を静的生成、実行段に Apache+Perl CGI+MeCab+nkf を同梱 |
+| `web/` | Astro フロントエンド（`src/pages/index.astro`＝校正画面、`about.astro`＝備考、`src/scripts/proofread.ts`＝fetch と描画） |
 | `docker/apache-monjo.conf.template` | njc.cgi を CGI 実行する vhost（`$PORT` 待受） |
 | `docker/ports.conf.template` | Apache の Listen ディレクティブ（`$PORT`） |
 | `docker/entrypoint.sh` | `$PORT` を差し込んで Apache をフォアグラウンド起動（Cloud Run 要件） |
@@ -97,4 +113,4 @@ Dockerfile はまだローカルでビルド・実行検証していない**た�
 2. リブート方針の確定（この文書を埋める）
 3. 校正ロジックの移植 + 単体テスト
 4. TLS 込みの最小構成デプロイ
-5. フロント刷新・旧ウィジェット除去
+5. フロント刷新・旧ウィジェット除去（← 完了: Astro 化, 2026-09）
