@@ -14,6 +14,8 @@ on:
       - Dockerfile
       - docker/**
       - legacy/**
+      - app/**
+      - web/**
       - .github/workflows/docker.yml
   workflow_dispatch:
 
@@ -48,7 +50,7 @@ jobs:
           set -euo pipefail
           docker run -d --name monjo -p 8080:8080 monjo-hakase:ci
 
-          # 起動待ち: トップ（入力フォーム）が 200 になるまで最大60秒
+          # 起動待ち: トップ（校正画面）が 200 になるまで最大60秒
           for i in $(seq 1 30); do
             code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/ || true)
             if [ "$code" = "200" ]; then echo "up (HTTP 200)"; break; fi
@@ -56,6 +58,48 @@ jobs:
             sleep 2
             if [ "$i" = "30" ]; then echo "ERROR: server did not become ready"; docker logs monjo; exit 1; fi
           done
+
+          # 新フロントエンド（Astro）が DocumentRoot に配置されていること
+          top=$(curl -s http://localhost:8080/)
+          if ! echo "$top" | grep -q 'id="txtInput"'; then
+            echo "ERROR: top page does not contain the proofreading form (Astro build missing?)"; exit 1
+          fi
+          if ! echo "$top" | grep -q 'action="/njc.cgi"'; then
+            echo "ERROR: top page form does not post to /njc.cgi"; exit 1
+          fi
+          code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/about/)
+          if [ "$code" != "200" ]; then echo "ERROR: /about/ returned $code"; exit 1; fi
+          code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/monjo-hakase-tebiki.pdf)
+          if [ "$code" != "200" ]; then echo "ERROR: /monjo-hakase-tebiki.pdf returned $code"; exit 1; fi
+          # Astro のアセットが配信され、長期キャッシュヘッダが付くこと
+          asset=$(echo "$top" | grep -oE '/_astro/[^"]+\.css' | head -1)
+          hdr=$(curl -s -D - -o /dev/null "http://localhost:8080$asset")
+          echo "$hdr" | head -1
+          if ! echo "$hdr" | grep -qi 'cache-control: public, max-age=31536000'; then
+            echo "ERROR: /_astro/ asset lacks long-lived Cache-Control"; echo "$hdr"; exit 1
+          fi
+          echo "frontend checks passed"
+
+          # JSON API（フロントエンドが fetch で呼ぶ format=json）が正しい形で返ること
+          json=$(curl -s --max-time 30 -D /tmp/json.hdr -X POST http://localhost:8080/njc.cgi \
+            -F 'txtInput=この文章はとても長くて冗長であるということができるかもしれないと思われる。' \
+            -F 'btnKaiseki=校正' -F 'format=json')
+          head -1 /tmp/json.hdr
+          if ! grep -qi 'content-type: application/json' /tmp/json.hdr; then
+            echo "ERROR: format=json did not return application/json"; cat /tmp/json.hdr; exit 1
+          fi
+          echo "$json" | python3 -c '
+          import json, sys
+          d = json.load(sys.stdin)
+          assert d["ok"] is True, "ok != true"
+          assert len(d["sentences"]) >= 1, "no sentences"
+          assert isinstance(d["errors"], list), "errors not a list"
+          assert len(d["errorTypes"]) == 7, "errorTypes != 7"
+          for e in d["errors"]:
+              assert 1 <= e["type"] <= 7 and e["label"] and e["sentence"] >= 1
+          print("json ok: sentences=%d errors=%d" % (len(d["sentences"]), len(d["errors"])))
+          '
+          echo "JSON API test passed"
 
           # 校正リクエストを投げ、CGI が最後まで通ったか検証
           body=$(curl -s --max-time 30 -X POST http://localhost:8080/njc.cgi \

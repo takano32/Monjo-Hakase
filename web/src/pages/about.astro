@@ -1,0 +1,177 @@
+---
+// 備考ページ。旧トップページ（legacy/site/index.html, legacy/monjo-hakase/index.htm）に
+// 載っていた説明・使い方・制限事項・更新履歴・リンク・ライセンスをここに移した。
+// 死んだ第三者ウィジェット（忍者/はてな/Yahoo!/埋め込みBBS/旧GA）は載せない。
+import Base from '../layouts/Base.astro';
+
+const REPO = 'https://github.com/takano32/Monjo-Hakase';
+
+const HISTORY_REBOOT = [
+  { date: '2026-09', text: 'フロントエンドを Astro で刷新。トップページを校正画面にし、旧トップの情報をこのページに移動。校正結果を JSON で返す API を njc.cgi に追加。' },
+  { date: '2026-08-21', text: 'Google Cloud Run（東京）で再公開。HTTPS 化、コマンドインジェクション（CWE-78）の修正、Docker 化と CI による自動デプロイ。' },
+];
+const HISTORY_ORIG = [
+  { date: '2013-07-08', text: '文章博士ソースコード（Rev.2）を公開。自分で設置したい場合に利用可能。本サイト稼働版との差はトラッキングコードの有無のみ。' },
+  { date: '2013-02-28', text: '解析エンジンを CaboCha-0.64、MeCab-0.994 に更新。' },
+  { date: '2012-12-10', text: 'jcorrect の改造による高速化が完了。' },
+  { date: '2012-05-18', text: 'サーバ移転。メモリを 2 倍に拡充。' },
+  { date: '2011-11-23', text: 'Rel.2 バグ取りが完了。' },
+  { date: '2011-11-05', text: 'Rel.1 サービス開始。' },
+];
+const ERRORS = [
+  ['主語なし', '係り受け解析で主語が検出できない'],
+  ['冗長表現', 'jcorrect の接続詞ベースの辞書ルールに合致'],
+  ['語順エラー', '「……が（は）……を……から……に……する」の語順から外れる'],
+  ['文節長さ超過', '文節が 30 文字以上'],
+  ['１文長さ超過', '1 文が長すぎる'],
+  ['係り受け量過多', '1 つの文節に 5 つ以上の文節が係る'],
+  ['係り受け長さ冗長', '係り受けが係り先を含めて 5 段以上つながる'],
+];
+---
+<Base title="使い方・備考" current="about">
+  <main class="wrap about">
+    <header class="about__head rise" data-d="0">
+      <p class="eyebrow">備考 / About</p>
+      <h1>文章博士について</h1>
+      <p class="lead">
+        文章博士（もんじょうはかせ）は、Web ベースの技術文書・テクニカルライティング向け自動校正支援システムです。
+        主に説明文、論文、技術文書の自動校正にチューンされています。特別なソフトをインストールする必要はありません。
+        <a href="/">校正画面へ戻る →</a>
+      </p>
+    </header>
+
+    <div class="about__grid">
+      <nav class="toc rise" data-d="1" aria-label="目次">
+        <b>目次</b>
+        <a href="#usage">使用方法</a>
+        <a href="#errors">指摘する 7 種のエラー</a>
+        <a href="#limits">制限事項</a>
+        <a href="#how">仕組み</a>
+        <a href="#history">更新履歴</a>
+        <a href="#license">ライセンスとソースコード</a>
+        <a href="#links">リンク</a>
+      </nav>
+
+      <article class="prose rise" data-d="2">
+        <section id="usage">
+          <h2>使用方法</h2>
+          <ol>
+            <li>トップページのフォームに、校正したい文章を入力します。</li>
+            <li>「校正する」を押す（または <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Enter</kbd>）と、同じページの下に結果が表示されます。</li>
+            <li>エラーと思われる箇所は本文に色で示され、その下にエラーの一覧と解説が並びます。これを参考に文章を修正し、再校正してください。</li>
+            <li>校正を終えた文章は、コピー＆ペーストでお持ち帰りください。入力中の文章はブラウザ内に下書きとして保存されます（サーバには残りません）。</li>
+          </ol>
+          <p>
+            印刷用に <a href="/monjo-hakase-tebiki.pdf">PDF 版の手引き</a>（3 ページ、旧サイト配布物）もあります。
+          </p>
+        </section>
+
+        <section id="errors">
+          <h2>指摘する 7 種のエラー</h2>
+          <table>
+            <thead><tr><th>種別</th><th>判定基準</th></tr></thead>
+            <tbody>
+              {ERRORS.map(([name, rule]) => (<tr><th scope="row">{name}</th><td>{rule}</td></tr>))}
+            </tbody>
+          </table>
+          <p>
+            設計思想は「<strong>機械が係り受けを解析できる文 ＝ 分かりやすい文</strong>」です。
+            エラーを潰すほど、説明文・論文・技術文書に適した文体に近づく、という前提に立っています。
+          </p>
+        </section>
+
+        <section id="limits">
+          <h2>制限事項</h2>
+          <ul>
+            <li>箇条書きの文章には対応していません。エラーが出ますが無視して構いません。</li>
+            <li>係り受け解析は自動処理のため、意図しない場所でエラーが出ることがあります。新語・造語による誤処理や、主語が曖昧でも主部が存在すると分かる場合は、エラーを無視して構いません。</li>
+            <li>処理速度はおおむね 2,500 文字で数秒程度（CPU 依存）です。文の数が増えるほど遅くなるため、数段落ごとに校正し、終わったら次の段落へ、という使い方が快適です。</li>
+            <li>現在の環境はアクセスが無い間は停止する構成（scale-to-zero）のため、しばらくぶりの最初の 1 回だけ応答に十数秒かかることがあります。</li>
+          </ul>
+        </section>
+
+        <section id="how">
+          <h2>仕組み</h2>
+          <p>Perl CGI が外部エンジンを順に呼ぶパイプライン構成です。</p>
+          <pre><code>入力 → nkf（UTF-8 化）→ jcorrect（主語なし / 冗長表現 / 語順）
+                     → CaboCha（係り受け解析：深さ / 量）← 内部で MeCab
+     → 7 種のエラーに分類して表示</code></pre>
+          <p>
+            エンジンは <strong>CaboCha</strong>（係り受け解析）、<strong>MeCab</strong>（形態素解析）、<strong>CRF++</strong>（CaboCha の依存）、
+            <strong>jcorrect</strong>（大崎博之氏、GPL。UTF-8 対応の改造版 <code>jcorrect-hs</code> を同梱）、<strong>nkf</strong> です。
+            この画面（フロントエンド）は Astro で静的に生成し、校正結果は同じ CGI が JSON で返しています。
+          </p>
+        </section>
+
+        <section id="history">
+          <h2>更新履歴</h2>
+          <h3>リブート（2026–）</h3>
+          <dl class="history">
+            {HISTORY_REBOOT.map((h) => (<><dt>{h.date}</dt><dd>{h.text}</dd></>))}
+          </dl>
+          <h3>オリジナル（Lunar-K, 2011–2013）</h3>
+          <dl class="history">
+            {HISTORY_ORIG.map((h) => (<><dt>{h.date}</dt><dd>{h.text}</dd></>))}
+          </dl>
+        </section>
+
+        <section id="license">
+          <h2>ライセンスとソースコード</h2>
+          <p>
+            同梱する jcorrect が GPL で、標準入出力を介して外部リンクしているため、念のため <strong>BSDL と GPL のデュアルライセンス</strong>としています。
+            UTF-8 対応のための改変と、文章博士で使わないルーチンを削除した改造版 jcorrect（jcorrect-hs）を同梱します。
+          </p>
+          <p>
+            ソースコードは <a href={REPO} rel="noopener" target="_blank">GitHub（takano32/Monjo-Hakase）</a> で公開しています。
+            旧配布物（Rev.2）は <code>legacy/</code> に無改変で保存し、リブート後の保守版は <code>app/</code> と <code>web/</code> にあります。
+            自分で設置する場合は Docker イメージをビルドすれば、CaboCha / MeCab / CRF++ 込みで動きます。
+          </p>
+        </section>
+
+        <section id="links">
+          <h2>リンク</h2>
+          <ul class="links">
+            <li><a href="https://taku910.github.io/cabocha/" rel="noopener" target="_blank">CaboCha / 南瓜</a> — 日本語係り受け解析器。本サービスはその結果を参照しています。</li>
+            <li><a href="https://taku910.github.io/mecab/" rel="noopener" target="_blank">MeCab</a> — 形態素解析エンジン（CaboCha が内部で使用）。</li>
+            <li><a href="http://www.ispl.jp/~oosaki/research/tips-jcorrect/" rel="noopener" target="_blank">jcorrect</a> — 日本語校正支援 CUI プログラム（大崎博之氏）。</li>
+            <li><a href="http://flavors.me/lunark" rel="noopener" target="_blank">Lunarfactory</a> — 原作者 Lunar-K のページ（旧リンク。現在は到達できない可能性があります）。</li>
+            <li><a href="/index.htm">旧トップページ（アーカイブ、無改変）</a> — 2013 年当時の入力画面。外部ウィジェットは動作しません。</li>
+          </ul>
+        </section>
+      </article>
+    </div>
+  </main>
+</Base>
+
+<style>
+  .about { padding-top: clamp(24px, 5vw, 56px); }
+  .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .18em; color: var(--shu); margin: 0 0 6px; text-transform: uppercase; }
+  .about__head h1 { font-size: clamp(26px, 4vw, 40px); }
+  .lead { color: var(--ink-2); max-width: 70ch; margin-top: 12px; }
+  .about__grid { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 36px; margin-top: 28px; align-items: start; }
+  @media (max-width: 800px) { .about__grid { grid-template-columns: 1fr; gap: 20px; } }
+
+  .toc { position: sticky; top: 90px; display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+  .toc b { font-family: var(--font-display); letter-spacing: .1em; color: var(--ink-3); font-size: 12px; margin-bottom: 6px; }
+  .toc a { text-decoration: none; color: var(--ink-2); padding: 5px 10px; border-left: 2px solid var(--rule); }
+  .toc a:hover { color: var(--shu); border-left-color: var(--shu); }
+  @media (max-width: 800px) { .toc { position: static; flex-direction: row; flex-wrap: wrap; } .toc b { width: 100%; } .toc a { border-left: 0; border: 1px solid var(--rule-2); border-radius: 999px; } }
+
+  .prose { max-width: 76ch; }
+  .prose section { padding: 26px 0; border-top: 1px solid var(--rule); scroll-margin-top: 90px; }
+  .prose section:first-child { border-top: 0; padding-top: 0; }
+  .prose h2 { font-size: 22px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; }
+  .prose h2::before { content: ""; width: 4px; height: .85em; background: var(--shu); border-radius: 1px; }
+  .prose h3 { font-size: 15px; color: var(--ink-2); margin: 18px 0 6px; letter-spacing: .06em; }
+  .prose ul, .prose ol { padding-left: 1.4em; margin: 0 0 1em; }
+  .prose li { margin-bottom: .35em; }
+  .prose pre { background: var(--paper-2); border: 1px solid var(--rule); border-radius: var(--radius); padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.7; }
+  .prose table { border-collapse: collapse; width: 100%; font-size: 14.5px; margin-bottom: 1em; }
+  .prose th, .prose td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  .prose thead th { font-family: var(--font-display); font-size: 13px; letter-spacing: .06em; color: var(--ink-2); border-bottom: 2px solid var(--rule-2); }
+  .prose tbody th { white-space: nowrap; font-weight: 700; width: 11em; }
+  .history { display: grid; grid-template-columns: 7.5em 1fr; gap: 4px 14px; margin: 0 0 8px; font-size: 14.5px; }
+  .history dt { font-family: var(--font-mono); font-size: 13px; color: var(--shu); }
+  .history dd { margin: 0; color: var(--ink-2); }
+  .links li { margin-bottom: .6em; }
+</style>
