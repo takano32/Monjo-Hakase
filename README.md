@@ -9,7 +9,7 @@
 
 ## 稼働中サービス
 
-- **公開URL:** https://monjo-hakase-v3aibpl2aa-an.a.run.app
+- **公開URL:** https://monjo.no32.tk （Cloud Run のドメインマッピング。既定 URL https://monjo-hakase-v3aibpl2aa-an.a.run.app も引き続き有効）
 - Google Cloud Run（東京リージョン, `asia-northeast1`）/ scale-to-zero
 - HTTPS、`--max-instances 3`
 

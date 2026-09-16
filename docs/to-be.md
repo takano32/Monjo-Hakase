@@ -5,7 +5,7 @@
 
 ## 進捗サマリ（2026-09-16 時点）
 
-**リブートの土台は稼働済み。** 公開URL: https://monjo-hakase-v3aibpl2aa-an.a.run.app （Cloud Run / 東京）
+**リブートの土台は稼働済み。** 公開URL: https://monjo.no32.tk （Cloud Run / 東京。既定 URL https://monjo-hakase-v3aibpl2aa-an.a.run.app も有効）
 
 - [x] Docker 化（CRF++/CaboCha ソースビルド込み）と Cloud Run デプロイ
 - [x] HTTPS 化（TLS 終端 + フォーム action の https 化）
@@ -13,7 +13,7 @@
 - [x] CI: ビルド/スモーク/セキュリティ回帰（`docker-build.yml`）
 - [x] CI: Cloud Run 自動デプロイ（`deploy.yml`, WIF キーレス認証）
 - [x] フロント刷新（Astro。トップ＝校正画面、旧トップの情報は `/about/` へ。死んだ外部ウィジェット除去）
-- [ ] 独自ドメイン割り当て（`monjo.lunark.org` → Cloud Run）
+- [x] 独自ドメイン割り当て（`monjo.no32.tk` → Cloud Run ドメインマッピング、2026-09-16。CNAME `monjo` → `ghs.googlehosted.com.`、所有確認は `no32.tk` の TXT）
 - [ ] ビルド再現性（CRF++/CaboCha のコミット固定）
 - [ ] `--max-instances` 等の運用値確定 + 予算アラート
 
@@ -104,7 +104,7 @@ Dockerfile はまだローカルでビルド・実行検証していない**た�
 - [ ] 解析エンジン: CaboCha/MeCab 継続 or 載せ替え（候補調査）
 - [ ] jcorrect（GPL）を使い続けるか → 使うならライセンス整理（GPL 汚染範囲の確認）
 - [ ] ホスティング先（現行さくら VPS を継続 / 別環境）
-- [ ] ドメイン（`monjo.lunark.org` 継続 / 新規）
+- [x] ドメイン（`monjo.no32.tk` を新規に割当。旧 `monjo.lunark.org` は作者管理のため対象外）
 - [ ] 旧サービスの扱い（凍結 / リダイレクト / 併存）
 
 ## マイルストーン（ドラフト）

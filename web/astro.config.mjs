@@ -5,7 +5,7 @@ import { defineConfig, passthroughImageService } from 'astro/config';
 // 静的サイトとしてビルドし、Dockerfile が dist/ を Apache の DocumentRoot に
 // 配置する。校正 API（/njc.cgi?format=json）は同一オリジンの Perl CGI。
 export default defineConfig({
-  site: 'https://monjo-hakase-v3aibpl2aa-an.a.run.app',
+  site: 'https://monjo.no32.tk',
   output: 'static',
   trailingSlash: 'always',
   build: { format: 'directory' },
